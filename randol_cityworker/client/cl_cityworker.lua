@@ -111,7 +111,8 @@ RegisterNetEvent('randol_cityworker:client:startJob', function(vehicle)
     local vehicle = Config.JobVehicle
     local coords = Config.VehicleSpawn
     TriggerServerEvent("randol_cityworker:server:SetJob")
-    QBCore.Functions.SpawnVehicle(vehicle, function(veh)
+    QBCore.Functions.TriggerCallback('QBCore:Server:SpawnVehicle', function(netId)
+        local veh = NetToVeh(netId)
         SetVehicleNumberPlateText(veh, "CITY"..tostring(math.random(1000, 9999)))
         DecorSetFloat(veh, "city_worker", 1)
         SetEntityAsMissionEntity(veh, true, true)
@@ -120,7 +121,7 @@ RegisterNetEvent('randol_cityworker:client:startJob', function(vehicle)
         TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
         CurrentPlate = QBCore.Functions.GetPlate(veh)
         exports[Config.FuelScript]:SetFuel(veh, 100.0)
-    end, coords, true)
+    end, vehicle, coords, true)
     AssignTask()
 end)
 
@@ -153,7 +154,7 @@ RegisterNetEvent('randol_cityworker:client:completeRepairs', function()
             TriggerEvent('animations:client:EmoteCommandStart', {"hammer"}) -- This is a hacky way of fixing the hammer getting stuck in your hand. Don't question it.
             Wait(100)
             TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-            TriggerServerEvent("randol_cityworker:server:taskPayout")
+            TriggerServerEvent("randol_cityworker:server:taskPayout", newtask)
             QBCore.Functions.Notify("Wait for your next task!", "success")
             SetTimeout(Config.Timeout, function()
                 activeJob = false
