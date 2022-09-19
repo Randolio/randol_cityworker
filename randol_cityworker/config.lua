@@ -1,5 +1,7 @@
 Config = {}
 
+Config.ServerSideSpawn = true -- Set to false if the vehicle won't spawn for you. (probably using older core)
+
 Config.FuelScript = 'ps-fuel'
 
 Config.BossModel = "s_m_y_construct_02"
