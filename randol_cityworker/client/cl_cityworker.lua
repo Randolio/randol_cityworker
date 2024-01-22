@@ -145,6 +145,7 @@ RegisterNetEvent('randol_cityworker:client:finishJob', function()
     if activeJob then
         if DecorExistOn((veh), "city_worker") then
             QBCore.Functions.DeleteVehicle(veh)
+	QBCore.Functions.Notify("Completed work, come back whenever you want", "success")
         else
             QBCore.Functions.Notify("This is not a work vehicle.", "error")
         end
