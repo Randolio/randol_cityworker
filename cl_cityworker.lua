@@ -73,7 +73,7 @@ end
 local function spawnPed()
     if DoesEntityExist(cityBoss) then return end
     
-    lib.requestModel(Config.BossModel, 1000)
+    lib.requestModel(Config.BossModel)
     cityBoss = CreatePed(0, Config.BossModel, Config.BossCoords, false, false)
     SetEntityAsMissionEntity(cityBoss)
     SetPedFleeAttributes(cityBoss, 0, 0)
@@ -81,6 +81,7 @@ local function spawnPed()
     SetEntityInvincible(cityBoss, true)
     FreezeEntityPosition(cityBoss, true)
     TaskStartScenarioInPlace(cityBoss, 'WORLD_HUMAN_CLIPBOARD', 0, true)
+    SetModelAsNoLongerNeeded(Config.BossModel)
     exports['qb-target']:AddTargetEntity(cityBoss, { 
         options = {
             {
