@@ -10,3 +10,5 @@ Requirements: https://github.com/overextended/ox_lib/releases
 * Utilized ox lib throughout.
 * Configs are now split into client and server configs. (config.lua and sv_config.lua)
 * The whole script was rewritten to secure any exploits.
+
+**You have permission to use this in your server and edit for your personal needs but are not allowed to redistribute.**
