@@ -1,6 +1,7 @@
 local Config = lib.require('config')
 local isHired, activeJob = false
-local cityBoss, startZone
+local cityBoss, startZone, currZone
+local oxtarget = GetResourceState('ox_target') == 'started'
 
 local CITY_BLIP = AddBlipForCoord(Config.BossCoords.x, Config.BossCoords.y, Config.BossCoords.z)
 SetBlipSprite(CITY_BLIP, 566)
@@ -13,12 +14,21 @@ AddTextComponentSubstringPlayerName("City Worker Job")
 EndTextCommandSetBlipName(CITY_BLIP)
 
 local function resetJob()
-    exports['qb-target']:RemoveZone('workBox')
+    if oxtarget then
+        exports.ox_target:removeZone(currZone)
+    else
+        exports['qb-target']:RemoveZone(currZone)
+    end
+    currZone = nil
     RemoveBlip(JobBlip)
     isHired = false
     activeJob = false
     if DoesEntityExist(cityBoss) then
-        exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
+        if oxtarget then
+            exports.ox_target:removeLocalEntity(cityBoss, {'Start Work', 'Finish Work'})
+        else
+            exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
+        end
         DeleteEntity(cityBoss)
         cityBoss = nil
     end
@@ -64,7 +74,11 @@ end
 
 local function yeetPed()
     if DoesEntityExist(cityBoss) then
-        exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
+        if oxtarget then
+            exports.ox_target:removeLocalEntity(cityBoss, {'Start Work', 'Finish Work'})
+        else
+            exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
+        end
         DeleteEntity(cityBoss)
         cityBoss = nil
     end
@@ -82,12 +96,12 @@ local function spawnPed()
     FreezeEntityPosition(cityBoss, true)
     TaskStartScenarioInPlace(cityBoss, 'WORLD_HUMAN_CLIPBOARD', 0, true)
     SetModelAsNoLongerNeeded(Config.BossModel)
-    exports['qb-target']:AddTargetEntity(cityBoss, { 
-        options = {
+    if oxtarget then
+        exports.ox_target:addLocalEntity(cityBoss, {
             {
                 icon = 'fa-solid fa-clipboard-list',
                 label = 'Start Work',
-                action = function()
+                onSelect = function()
                     local netid, data = lib.callback.await('randol_cityworker:server:spawnVehicle', false)
                     if netid and data then
                         startWork(netid, data)
@@ -96,25 +110,58 @@ local function spawnPed()
                 canInteract = function()
                     return not isHired
                 end,
+                distance = 1.5,
             },
             {
                 icon = 'fa-solid fa-clipboard-check',
                 label = 'Finish Work',
-                action = function()
+                onSelect = function()
                     finishWork()
                 end,
-                canInteract = function()
-                    return isHired
-                end,
+                canInteract = function() return isHired end,
+                distance = 1.5,
             },
-        }, 
-        distance = 1.5, 
-    })
+        })
+    else
+        exports['qb-target']:AddTargetEntity(cityBoss, { 
+            options = {
+                {
+                    icon = 'fa-solid fa-clipboard-list',
+                    label = 'Start Work',
+                    action = function()
+                        local netid, data = lib.callback.await('randol_cityworker:server:spawnVehicle', false)
+                        if netid and data then
+                            startWork(netid, data)
+                        end
+                    end,
+                    canInteract = function()
+                        return not isHired
+                    end,
+                },
+                {
+                    icon = 'fa-solid fa-clipboard-check',
+                    label = 'Finish Work',
+                    action = function()
+                        finishWork()
+                    end,
+                    canInteract = function()
+                        return isHired
+                    end,
+                },
+            }, 
+            distance = 1.5, 
+        })
+    end
 end
 
 local function repairSpot()
     if not isHired then return end
-    exports['qb-target']:RemoveZone('workBox')
+    if oxtarget then
+        exports.ox_target:removeZone(currZone)
+    else
+        exports['qb-target']:RemoveZone(currZone)
+    end
+    currZone = nil
     TaskStartScenarioInPlace(cache.ped, 'WORLD_HUMAN_HAMMERING', 0, true)
     if lib.progressCircle({
         duration = 10000,
@@ -151,20 +198,35 @@ function NextDelivery(data)
     AddTextComponentSubstringPlayerName("City Worker Task")
     EndTextCommandSetBlipName(JobBlip)
 
-    exports['qb-target']:AddCircleZone('workBox', vec3(currentLoc.x, currentLoc.y, currentLoc.z), 1.3,{
-        name = 'workBox', 
-        debugPoly = false, 
-        useZ=true, 
-    }, { options = {
-        { 
-            icon = 'fa-solid fa-hammer', 
-            label = 'Repair',
-            action = function() 
-                repairSpot()
-            end,
-        },}, 
-        distance = 1.5 
-    })
+    if oxtarget then
+        currZone = exports.ox_target:addSphereZone({
+            coords = vec3(currentLoc.x, currentLoc.y, currentLoc.z),
+            radius = 1.3,
+            debug = false,
+            options = {
+                {
+                    icon = 'fa-solid fa-hammer', 
+                    label = 'Repair',
+                    onSelect = repairSpot,
+                },
+                
+            }
+        })
+    else
+        exports['qb-target']:AddCircleZone('workBox', vec3(currentLoc.x, currentLoc.y, currentLoc.z), 1.3,{
+            name = 'workBox', 
+            debugPoly = false, 
+            useZ=true, 
+        }, { options = {
+            { 
+                icon = 'fa-solid fa-hammer', 
+                label = 'Repair',
+                action = repairSpot,
+            },}, 
+            distance = 1.5 
+        })
+        currZone = 'workBox'
+    end
 
     activeJob = true
     DoNotification('You have been assigned a new task.', 'success')
