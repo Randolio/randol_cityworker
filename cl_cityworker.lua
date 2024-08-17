@@ -1,7 +1,6 @@
 local Config = lib.require('config')
 local isHired, activeJob = false
 local cityBoss, startZone, currZone
-local oxtarget = GetResourceState('ox_target') == 'started'
 
 local CITY_BLIP = AddBlipForCoord(Config.BossCoords.x, Config.BossCoords.y, Config.BossCoords.z)
 SetBlipSprite(CITY_BLIP, 566)
@@ -14,7 +13,7 @@ AddTextComponentSubstringPlayerName("City Worker Job")
 EndTextCommandSetBlipName(CITY_BLIP)
 
 local function resetJob()
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         exports.ox_target:removeZone(currZone)
     else
         exports['qb-target']:RemoveZone(currZone)
@@ -24,7 +23,7 @@ local function resetJob()
     isHired = false
     activeJob = false
     if DoesEntityExist(cityBoss) then
-        if oxtarget then
+        if GetResourceState('ox_target') == 'started' then
             exports.ox_target:removeLocalEntity(cityBoss, {'Start Work', 'Finish Work'})
         else
             exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
@@ -74,7 +73,7 @@ end
 
 local function yeetPed()
     if DoesEntityExist(cityBoss) then
-        if oxtarget then
+        if GetResourceState('ox_target') == 'started' then
             exports.ox_target:removeLocalEntity(cityBoss, {'Start Work', 'Finish Work'})
         else
             exports['qb-target']:RemoveTargetEntity(cityBoss, {'Start Work', 'Finish Work'})
@@ -96,7 +95,7 @@ local function spawnPed()
     FreezeEntityPosition(cityBoss, true)
     TaskStartScenarioInPlace(cityBoss, 'WORLD_HUMAN_CLIPBOARD', 0, true)
     SetModelAsNoLongerNeeded(Config.BossModel)
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         exports.ox_target:addLocalEntity(cityBoss, {
             {
                 icon = 'fa-solid fa-clipboard-list',
@@ -156,7 +155,7 @@ end
 
 local function repairSpot()
     if not isHired then return end
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         exports.ox_target:removeZone(currZone)
     else
         exports['qb-target']:RemoveZone(currZone)
@@ -198,7 +197,7 @@ function NextDelivery(data)
     AddTextComponentSubstringPlayerName("City Worker Task")
     EndTextCommandSetBlipName(JobBlip)
 
-    if oxtarget then
+    if GetResourceState('ox_target') == 'started' then
         currZone = exports.ox_target:addSphereZone({
             coords = vec3(currentLoc.x, currentLoc.y, currentLoc.z),
             radius = 1.3,
